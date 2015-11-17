@@ -4,7 +4,7 @@ var webpack = require('webpack');
 module.exports = {
     cache: true,
 
-    watch: true,
+    watch: false,
 
     entry: {
         'app': ['./app/js/app.js']

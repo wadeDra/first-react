@@ -1,3 +1,10 @@
+/**
+ *初始化项目前端
+ */
+
+'use strict';
+
+
 var gulp = require('gulp'),
     less = require('gulp-less'),
     $ = require('gulp-load-plugins')(),
@@ -5,7 +12,9 @@ var gulp = require('gulp'),
     autoprefixer = require('gulp-autoprefixer');
 var runSequence = require('run-sequence');
 var browserSync = require('browser-sync');
+;
 var browserify = require('browserify');
+var reload = browserSync.reload;
 var watchify = require('watchify');
 var webpackConfig = require('./webpack.config');
 var webpack = require('gulp-webpack');
@@ -27,13 +36,25 @@ var paths = {
         base: 'dist',
         js: 'dist/js',
         css: 'dist/css',
-        i: 'dist/i'
+        image: 'dist/image'
     }
 };
 
 // 洗刷刷
 gulp.task('clean', function (cb) {
-    del(['dist/*', '!dist/.git'], {dot: true}, cb);
+    del(['dist/*', '!dist/.git'], {dot: true}, cb());
+});
+
+
+// 图片优化
+gulp.task('images', function () {
+    return gulp.src('app/i/**/*')
+        .pipe($.cache($.imagemin({
+            progressive: true,
+            interlaced: true
+        })))
+        .pipe(gulp.dest(paths.dist.image))
+        .pipe($.size({title: 'images'}));
 });
 
 
@@ -68,10 +89,30 @@ gulp.task('html', function () {
         .pipe($.size({title: 'html'}));
 });
 
+// 监视源文件变化自动cd编译
+gulp.task('watch', function () {
+    gulp.watch('app/**/*.html', ['html']);
+    gulp.watch('app/less/**/*less', ['styles']);
+    gulp.watch('app/image/**/*', ['images']);
+    gulp.watch('app/js/**/*', ['buildJs']);
+});
+
+
+// 启动预览服务，并监视 Dist 目录变化自动刷新浏览器
+gulp.task('dev', ['default', 'watch'], function () {
+    browserSync({
+        notify: false,
+        logPrefix: 'ASK',
+        server: 'dist'
+    });
+
+    gulp.watch(['dist/**/*'], reload);
+});
+
 
 // 默认任务
 gulp.task('default', function (cb) {
-    runSequence(['clean', 'styles', 'buildJs', 'html'], cb);
+    runSequence('clean', ['buildJs', 'styles', 'html', 'images'], cb);
 });
 
 
